@@ -13,16 +13,18 @@ var Promise = require('bluebird');
 var promiseConstructor = require('./promiseConstructor');
 var promisification = require('./promisification');
 
+var fsWriteFilePromisify = Promise.promisify(fs.writeFile);
+
 var fetchProfileAndWriteToFile = function(readFilePath, writeFilePath) {
   return promiseConstructor.pluckFirstLineFromFileAsync(readFilePath)
     .then(function(user) {
       return promisification.getGitHubProfileAsync(user);
-    }).then(function(JSONresponse) {
-      fs.writeFile(writeFilePath, JSONresponse, function(err) {
-        if (err) {
-          throw err;
-        } 
-      });
+    })
+    .then(function(body) {
+      return fsWriteFilePromisify(writeFilePath, JSON.stringify(body));
+    })
+    .catch(function(err) {
+      console.log('Error with writing file: ', err);
     });
 };
 
